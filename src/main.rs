@@ -14,9 +14,9 @@ struct Opt {
 }
 fn main() {
     //trace_macros!(true);
-    let opt = Opt::from_args();
-    gen_stream(opt.snap);
-    //gen_stream(Snap::S26th);
+    //let opt = Opt::from_args();
+    //gen_stream(opt.snap);
+    gen_stream(Snap::S26th);
 }
 
 fn gen_stream(snap: Snap) {
@@ -58,7 +58,7 @@ fn gen_stream(snap: Snap) {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 enum Note {
     None,
     Tap,
@@ -73,6 +73,7 @@ struct Measure {
     notes: Vec<NoteLine>,
 }
 
+#[derive(Clone)]
 struct NoteLine {
     notes: Vec<Note>,
 }
@@ -239,7 +240,7 @@ impl fmt::Display for Measure {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = String::from("");
         for nl in &self.notes {
-            result.push_str(&format!("{}", nl));
+            result.push_str(&format!("{}\n", nl));
         }
 
         write!(f, "{}", result)
@@ -272,7 +273,7 @@ macro_rules! gen_stream {
 
         let mut notes: Vec<Measure> = Vec::new();
         notes.push(Measure::new());
-        notes[0].push(last);
+        notes[0].push(last.clone());
 
         let mut space_count = 0;
         let mut spacing_num = 0;
@@ -283,12 +284,14 @@ macro_rules! gen_stream {
             for j in 0..total{
                 if i * j == (num_runs - 1)*(total - 1) {//the last note is the first note of the next measure, so make sure to indicate its a new measure before placing it
                     meas_num += 1;
+                    notes.push(Measure::new());
                 }
                 if space_count == spacings[spacing_num] - 1{//if this line is where a note gets placed
                     let mut current = NoteLine::gen_single(4);
-                    while let Ok(true) = NoteLine::is_minijack(&notes[meas_num].notes[j], &current){
+                    while let Ok(true) = NoteLine::is_minijack(&last, &current){
                         current = NoteLine::gen_single(4);
                     }
+                    last = current.clone();
                     notes[meas_num].push(current);
                     space_count = 0;
                     if spacing_num + 1 == spacings.len(){//if we run out of spacings, repeat
@@ -307,7 +310,6 @@ macro_rules! gen_stream {
         }
         for i in 0..notes.len(){
             println!("{}", notes[i]);
-            println!(",");
         }
     };
 }
