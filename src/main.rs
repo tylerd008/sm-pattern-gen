@@ -58,7 +58,7 @@ fn gen_stream(snap: Snap) {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum Note {
     None,
     Tap,
@@ -69,11 +69,12 @@ enum Note {
     Fake,
 }
 
+#[derive(Debug)]
 struct Measure {
     notes: Vec<NoteLine>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct NoteLine {
     notes: Vec<Note>,
 }
@@ -243,7 +244,7 @@ impl fmt::Display for Measure {
             result.push_str(&format!("{}\n", nl));
         }
 
-        write!(f, "{}", result)
+        write!(f, "{},\n", result)
     }
 }
 
@@ -309,7 +310,7 @@ macro_rules! gen_stream {
             notes[meas_num].push(NoteLine::gen_empty(4));
         }
         for i in 0..notes.len(){
-            println!("{}", notes[i]);
+            print!("{}", notes[i]);
         }
     };
 }
