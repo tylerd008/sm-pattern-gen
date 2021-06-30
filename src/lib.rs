@@ -7,6 +7,15 @@ pub mod gen {
     use crate::{Measure, NoteLine, Snap};
     pub fn gen_stream(snap: Snap) {
         match snap {
+            Snap::S4th => {
+                gen_stream!(48);
+            }
+            Snap::S8th => {
+                gen_stream!(24, 24);
+            }
+            Snap::S12th => {
+                gen_stream!(16, 16, 16);
+            }
             Snap::S16th => {
                 gen_stream!(12, 12, 12, 12);
             }
@@ -22,6 +31,9 @@ pub mod gen {
             Snap::S28th => {
                 gen_stream!(7, 7, 7, 7, 7, 7, 6);
             }
+            Snap::S32nd => {
+                gen_stream!(6, 6, 6, 6, 6, 6, 6, 6);
+            }
             Snap::S36th => {
                 gen_stream!(5, 5, 6, 5, 5, 6, 5, 5, 6);
             }
@@ -30,6 +42,9 @@ pub mod gen {
             }
             Snap::S44th => {
                 gen_stream!(4, 4, 5, 4, 4, 4, 5, 4, 4, 4, 5);
+            }
+            Snap::S48th => {
+                gen_stream!(4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4);
             }
             Snap::S70th => {
                 gen_stream!(
@@ -40,7 +55,7 @@ pub mod gen {
             Snap::S80th => {
                 gen_stream!(2, 3, 2, 3, 2, 2, 3, 2, 3, 2, 2, 3, 2, 3, 2, 2, 3, 2, 3, 2);
             }
-            _ => println!("afdasdf"),
+            _ => println!("Unrecognized snap!"),
         }
     }
 }
