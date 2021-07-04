@@ -207,6 +207,42 @@ impl Measure {
 }
 
 impl NoteLine {
+    fn gen_quad(key_num: usize) -> Self {
+        Self {
+            notes: vec![Note::Tap, Note::Tap, Note::Tap, Note::Tap],
+        }
+    }
+    fn gen_hand(key_num: usize) -> Self {
+        let mut notes: Vec<Note> = Vec::new();
+        let note = rand::thread_rng().gen_range(0..key_num);
+        for i in 0..key_num {
+            if i == note {
+                notes.push(Note::None);
+            } else {
+                notes.push(Note::Tap);
+            }
+        }
+        Self { notes }
+    }
+    fn gen_jump(key_num: usize) -> Self {
+        //pretty sure this could be done better, specifically by eliminating the loop but not sure how i want to right now
+        let mut note1 = 0;
+        let mut note2 = 0;
+
+        while note1 == note2 {
+            note1 = rand::thread_rng().gen_range(0..key_num);
+            note2 = rand::thread_rng().gen_range(0..key_num);
+        }
+        let mut notes: Vec<Note> = Vec::new();
+        for i in 0..key_num {
+            if i == note1 || i == note2 {
+                notes.push(Note::Tap);
+            } else {
+                notes.push(Note::None);
+            }
+        }
+        Self { notes }
+    }
     fn gen_single(key_num: usize) -> Self {
         let mut notes: Vec<Note> = Vec::new();
         let note_num = rand::thread_rng().gen_range(0..key_num);
