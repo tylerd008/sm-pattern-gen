@@ -1,5 +1,4 @@
-//#[feature(trace_macros)]
-use pattern_gen::{gen, Snap};
+use pattern_gen::{gen, Pattern, Snap};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -9,9 +8,9 @@ use structopt::StructOpt;
 )]
 struct Opt {
     snap: Snap,
+    pattern: Pattern,
 }
 fn main() {
-    //trace_macros!(true);
     let opt = Opt::from_args();
-    gen::gen_pattern(opt.snap);
+    gen::gen_pattern(opt.pattern, opt.snap);
 }

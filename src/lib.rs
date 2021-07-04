@@ -3,115 +3,60 @@ use std::fmt;
 use std::str::FromStr;
 
 pub mod gen {
-    use crate::gen_pattern;
     use crate::{Measure, NoteLine, Pattern, Snap};
-    pub fn gen_pattern(snap: Snap) {
-        match snap {
-            Snap::S4th => {
-                gen_pattern!(Pattern::Stream, 48);
+    pub fn gen_pattern(pattern: Pattern, snap: Snap) {
+        let mut total: usize = 0;
+        let spacings: Vec<usize> = snap.get_192nds();
+        let note_types = pattern.get_chordtypes();
+        for num in &spacings {
+            total += num;
+        }
+        let mut last = note_types[0].gen();
+
+        let mut notes: Vec<Measure> = Vec::new();
+        notes.push(Measure::new());
+        notes[0].push(last.clone());
+
+        let mut space_count = 0;
+        let mut spacing_num = 0;
+        let mut note_num = 1; //start with 1 since we did note 0 a few lines above
+        let mut meas_num = 0;
+        let num_runs = 192 / total;
+        for i in 0..num_runs {
+            for j in 0..total {
+                if i * j == (num_runs - 1) * (total - 1) {
+                    //the last note is the first note of the next measure, so make sure to indicate its a new measure before placing it
+                    meas_num += 1;
+                    notes.push(Measure::new());
+                }
+                if space_count == spacings[spacing_num] - 1 {
+                    //if this line is where a note gets placed
+                    let mut current = note_types[note_num % note_types.len()].gen();
+                    while let Ok(true) = NoteLine::is_minijack(&last, &current) {
+                        //this will need to be changed in someway for chordjacks
+                        current = note_types[note_num % note_types.len()].gen();
+                    }
+                    last = current.clone();
+                    notes[meas_num].push(current);
+                    note_num += 1;
+                    space_count = 0;
+                    if spacing_num + 1 == spacings.len() {
+                        //if we run out of spacings, repeat
+                        spacing_num = 0;
+                    } else {
+                        spacing_num += 1;
+                    }
+                } else {
+                    notes[meas_num].push(NoteLine::gen_empty());
+                    space_count += 1;
+                }
             }
-            Snap::S8th => {
-                gen_pattern!(Pattern::Stream, 24, 24);
-            }
-            Snap::S12th => {
-                gen_pattern!(Pattern::Stream, 16, 16, 16);
-            }
-            Snap::S16th => {
-                gen_pattern!(Pattern::Stream, 12, 12, 12, 12);
-            }
-            Snap::S20th => {
-                gen_pattern!(Pattern::Stream, 10, 9, 10, 9, 10);
-            }
-            Snap::S22nd => {
-                gen_pattern!(Pattern::Stream, 9, 9, 9, 8, 9, 9, 9, 8, 9, 9, 8);
-            }
-            Snap::S26th => {
-                gen_pattern!(Pattern::Stream, 7, 7, 8, 7, 8, 7, 7, 8, 7, 8, 7, 7, 8);
-            }
-            Snap::S28th => {
-                gen_pattern!(Pattern::Stream, 7, 7, 7, 7, 7, 7, 6);
-            }
-            Snap::S32nd => {
-                gen_pattern!(Pattern::Stream, 6, 6, 6, 6, 6, 6, 6, 6);
-            }
-            Snap::S36th => {
-                gen_pattern!(Pattern::Stream, 5, 5, 6, 5, 5, 6, 5, 5, 6);
-            }
-            Snap::S40th => {
-                gen_pattern!(Pattern::Stream, 5, 5, 5, 5, 4, 5, 5, 5, 5, 4);
-            }
-            Snap::S44th => {
-                gen_pattern!(Pattern::Stream, 4, 4, 5, 4, 4, 4, 5, 4, 4, 4, 5);
-            }
-            Snap::S48th => {
-                gen_pattern!(Pattern::Stream, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4);
-            }
-            Snap::S70th => {
-                gen_pattern!(
-                    Pattern::Stream, //this formatting...
-                    3,
-                    3,
-                    3,
-                    2,
-                    3,
-                    3,
-                    3,
-                    2,
-                    3,
-                    3,
-                    3,
-                    2,
-                    3,
-                    3,
-                    3,
-                    2,
-                    3,
-                    3,
-                    3,
-                    2,
-                    3,
-                    3,
-                    3,
-                    2,
-                    3,
-                    3,
-                    3,
-                    2,
-                    3,
-                    3,
-                    3,
-                    2,
-                    3,
-                    3,
-                    2
-                );
-            }
-            Snap::S80th => {
-                gen_pattern!(
-                    Pattern::Stream,
-                    2,
-                    3,
-                    2,
-                    3,
-                    2,
-                    2,
-                    3,
-                    2,
-                    3,
-                    2,
-                    2,
-                    3,
-                    2,
-                    3,
-                    2,
-                    2,
-                    3,
-                    2,
-                    3,
-                    2
-                );
-            }
-            _ => println!("Unrecognized snap!"),
+        }
+        for _ in 0..3 {
+            notes[meas_num].push(NoteLine::gen_empty());
+        }
+        for i in 0..notes.len() {
+            print!("{}", notes[i]);
         }
     }
 }
@@ -173,6 +118,11 @@ pub enum SnapParseError {
 }
 
 #[derive(Debug)]
+pub enum PatternParseError {
+    UnrecognizedPattern,
+}
+
+#[derive(Debug)]
 pub enum Pattern {
     Stream,
     Jumpstream,
@@ -180,10 +130,93 @@ pub enum Pattern {
     Chordjacks,
 }
 
+impl Snap {
+    fn get_192nds(&self) -> Vec<usize> {
+        match self {
+            Snap::S4th => {
+                vec![48]
+            }
+            Snap::S8th => {
+                vec![24; 2]
+            }
+            Snap::S12th => {
+                vec![16; 3]
+            }
+            Snap::S16th => {
+                vec![12; 4]
+            }
+            Snap::S20th => {
+                vec![10, 9, 10, 9, 10]
+            }
+            Snap::S22nd => {
+                vec![9, 9, 9, 8, 9, 9, 9, 8, 9, 9, 8]
+            }
+            Snap::S26th => {
+                vec![7, 7, 8, 7, 8, 7, 7, 8, 7, 8, 7, 7, 8]
+            }
+            Snap::S28th => {
+                vec![7, 7, 7, 7, 7, 7, 6]
+            }
+            Snap::S32nd => {
+                vec![6; 8]
+            }
+            Snap::S36th => {
+                vec![5, 5, 6, 5, 5, 6, 5, 5, 6]
+            }
+            Snap::S40th => {
+                vec![5, 5, 5, 5, 4, 5, 5, 5, 5, 4]
+            }
+            Snap::S44th => {
+                vec![4, 4, 5, 4, 4, 4, 5, 4, 4, 4, 5]
+            }
+            Snap::S48th => {
+                vec![4; 12]
+            }
+            Snap::S64th => {
+                vec![3; 16]
+            }
+            Snap::S70th => {
+                vec![
+                    3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3,
+                    3, 2, 3, 3, 3, 2, 3, 3, 2,
+                ]
+            }
+            Snap::S80th => {
+                vec![2, 3, 2, 3, 2, 2, 3, 2, 3, 2, 2, 3, 2, 3, 2, 2, 3, 2, 3, 2]
+            }
+            Snap::S96th => {
+                vec![2; 24]
+            }
+            Snap::S192nd => {
+                vec![1; 48]
+            }
+        }
+    }
+}
+
+impl FromStr for Pattern {
+    type Err = PatternParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let fmted_s = s.to_lowercase();
+        let fmted_s = fmted_s.trim();
+        let pattern = match &fmted_s[..] {
+            "stream" => Pattern::Stream,
+            "jumpstream" | "js" => Pattern::Jumpstream,
+            "handstream" | "hs" => Pattern::Handstream,
+            "chordjacks" | "chordjack" | "cjs" | "cj" => Pattern::Chordjacks,
+            _ => {
+                return Err(PatternParseError::UnrecognizedPattern);
+            }
+        };
+        Ok(pattern)
+    }
+}
 impl FromStr for Snap {
     type Err = SnapParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let snap = match s {
+        let fmted_s = s.to_lowercase();
+        let fmted_s = fmted_s.trim();
+        let snap = match fmted_s {
             "4th" | "4" => Snap::S4th,
             "8th" | "8" => Snap::S8th,
             "12th" | "12" => Snap::S12th,
@@ -207,6 +240,18 @@ impl FromStr for Snap {
             }
         };
         Ok(snap)
+    }
+}
+
+impl fmt::Display for Pattern {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let result = match self {
+            Self::Stream => "Stream",
+            Self::Jumpstream => "Jumpstream",
+            Self::Handstream => "Handstream",
+            Self::Chordjacks => "Chordjacks",
+        };
+        write!(f, "{}", result)
     }
 }
 
@@ -257,6 +302,15 @@ impl fmt::Display for Note {
     }
 }
 
+impl fmt::Display for PatternParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let result = match self {
+            PatternParseError::UnrecognizedPattern => "Pattern not recognized!",
+        };
+
+        write!(f, "{}", result)
+    }
+}
 impl fmt::Display for SnapParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let result = match self {
@@ -355,11 +409,9 @@ impl NoteLine {
         Self { notes }
     }
     fn gen_empty() -> Self {
-        let mut notes: Vec<Note> = Vec::new();
-        for _ in 0..Self::LENGTH {
-            notes.push(Note::None);
+        Self {
+            notes: vec![Note::None, Note::None, Note::None, Note::None],
         }
-        Self { notes }
     }
     fn is_minijack(line1: &NoteLine, line2: &NoteLine) -> Result<bool, NoteGenErr> {
         if line1.notes.len() != line2.notes.len() {
@@ -397,75 +449,17 @@ impl fmt::Display for NoteLine {
     }
 }
 
-#[macro_export]
-macro_rules! gen_pattern {
-    ($pattern_type:expr, $ ($spacing:expr),*) => {
-        let mut total: usize = 0;
-        let mut spacings: Vec<usize> = Vec::new();
-        let note_types = $pattern_type.get_chordtypes();
-        $(spacings.push($spacing);)*
-        for num in &spacings{
-            total += num;
-        }
-        println!("tot: {}", total);
-        let mut last = note_types[0].gen();
-
-        let mut notes: Vec<Measure> = Vec::new();
-        notes.push(Measure::new());
-        notes[0].push(last.clone());
-
-        let mut space_count = 0;
-        let mut spacing_num = 0;
-        let mut note_num = 1;//start with 1 since we did note 0 a few lines above
-        let mut meas_num = 0;
-        let num_runs = 192 / total;
-        println!("num runs: {}", num_runs);
-        for i in 0..num_runs{
-            for j in 0..total{
-                if i * j == (num_runs - 1)*(total - 1) {//the last note is the first note of the next measure, so make sure to indicate its a new measure before placing it
-                    meas_num += 1;
-                    notes.push(Measure::new());
-                }
-                if space_count == spacings[spacing_num] - 1{//if this line is where a note gets placed
-                    let mut current = note_types[note_num % note_types.len()].gen();
-                    while let Ok(true) = NoteLine::is_minijack(&last, &current){//this will need to be changed in someway for chordjacks
-                        current = note_types[note_num % note_types.len()].gen();
-                    }
-                    last = current.clone();
-                    notes[meas_num].push(current);
-                    note_num += 1;
-                    space_count = 0;
-                    if spacing_num + 1 == spacings.len(){//if we run out of spacings, repeat
-                        spacing_num = 0;
-                    }else {
-                        spacing_num += 1;
-                    }
-                } else {
-                    notes[meas_num].push(NoteLine::gen_empty());
-                    space_count += 1;
-                }
-            }
-        }
-        for _ in 0..3{
-            notes[meas_num].push(NoteLine::gen_empty());
-        }
-        for i in 0..notes.len(){
-            print!("{}", notes[i]);
-        }
-    };
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::{gen_pattern, Measure, NoteLine, Pattern};
+    use crate::{gen::gen_pattern, Measure, NoteLine, Pattern, Snap};
     #[test]
     fn js_gen() {
         //cargo test -- --nocapture
-        gen_pattern!(Pattern::Jumpstream, 12, 12, 12, 12);
+        gen_pattern(Pattern::Jumpstream, Snap::S16th);
     }
     #[test]
     fn hs_gen() {
         //cargo test -- --nocapture
-        gen_pattern!(Pattern::Handstream, 12, 12, 12, 12);
+        //gen_pattern!(Pattern::Handstream, 12, 12, 12, 12);
     }
 }
