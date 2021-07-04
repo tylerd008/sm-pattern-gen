@@ -207,15 +207,16 @@ impl Measure {
 }
 
 impl NoteLine {
-    fn gen_quad(key_num: usize) -> Self {
+    const LENGTH: usize = 4;
+    fn gen_quad() -> Self {
         Self {
             notes: vec![Note::Tap, Note::Tap, Note::Tap, Note::Tap],
         }
     }
-    fn gen_hand(key_num: usize) -> Self {
+    fn gen_hand() -> Self {
         let mut notes: Vec<Note> = Vec::new();
-        let note = rand::thread_rng().gen_range(0..key_num);
-        for i in 0..key_num {
+        let note = rand::thread_rng().gen_range(0..Self::LENGTH);
+        for i in 0..Self::LENGTH {
             if i == note {
                 notes.push(Note::None);
             } else {
@@ -224,17 +225,17 @@ impl NoteLine {
         }
         Self { notes }
     }
-    fn gen_jump(key_num: usize) -> Self {
+    fn gen_jump() -> Self {
         //pretty sure this could be done better, specifically by eliminating the loop but not sure how i want to right now
         let mut note1 = 0;
         let mut note2 = 0;
 
         while note1 == note2 {
-            note1 = rand::thread_rng().gen_range(0..key_num);
-            note2 = rand::thread_rng().gen_range(0..key_num);
+            note1 = rand::thread_rng().gen_range(0..Self::LENGTH);
+            note2 = rand::thread_rng().gen_range(0..Self::LENGTH);
         }
         let mut notes: Vec<Note> = Vec::new();
-        for i in 0..key_num {
+        for i in 0..Self::LENGTH {
             if i == note1 || i == note2 {
                 notes.push(Note::Tap);
             } else {
@@ -243,10 +244,10 @@ impl NoteLine {
         }
         Self { notes }
     }
-    fn gen_single(key_num: usize) -> Self {
+    fn gen_single() -> Self {
         let mut notes: Vec<Note> = Vec::new();
-        let note_num = rand::thread_rng().gen_range(0..key_num);
-        for i in 0..key_num {
+        let note_num = rand::thread_rng().gen_range(0..Self::LENGTH);
+        for i in 0..Self::LENGTH {
             if i == note_num {
                 notes.push(Note::Tap);
             } else {
@@ -255,9 +256,9 @@ impl NoteLine {
         }
         Self { notes }
     }
-    fn gen_empty(key_num: usize) -> Self {
+    fn gen_empty() -> Self {
         let mut notes: Vec<Note> = Vec::new();
-        for _ in 0..key_num {
+        for _ in 0..Self::LENGTH {
             notes.push(Note::None);
         }
         Self { notes }
@@ -308,7 +309,7 @@ macro_rules! gen_stream {
             total += num;
         }
         println!("tot: {}", total);
-        let mut last = NoteLine::gen_single(4);
+        let mut last = NoteLine::gen_single();
 
         let mut notes: Vec<Measure> = Vec::new();
         notes.push(Measure::new());
@@ -326,9 +327,9 @@ macro_rules! gen_stream {
                     notes.push(Measure::new());
                 }
                 if space_count == spacings[spacing_num] - 1{//if this line is where a note gets placed
-                    let mut current = NoteLine::gen_single(4);
+                    let mut current = NoteLine::gen_single();
                     while let Ok(true) = NoteLine::is_minijack(&last, &current){
-                        current = NoteLine::gen_single(4);
+                        current = NoteLine::gen_single();
                     }
                     last = current.clone();
                     notes[meas_num].push(current);
@@ -339,13 +340,13 @@ macro_rules! gen_stream {
                         spacing_num += 1;
                     }
                 } else {
-                    notes[meas_num].push(NoteLine::gen_empty(4));
+                    notes[meas_num].push(NoteLine::gen_empty());
                     space_count += 1;
                 }
             }
         }
         for _ in 0..3{
-            notes[meas_num].push(NoteLine::gen_empty(4));
+            notes[meas_num].push(NoteLine::gen_empty());
         }
         for i in 0..notes.len(){
             print!("{}", notes[i]);
