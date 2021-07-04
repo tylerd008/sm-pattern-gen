@@ -3,57 +3,113 @@ use std::fmt;
 use std::str::FromStr;
 
 pub mod gen {
-    use crate::gen_stream;
-    use crate::{Measure, NoteLine, Snap};
-    pub fn gen_stream(snap: Snap) {
+    use crate::gen_pattern;
+    use crate::{Measure, NoteLine, Pattern, Snap};
+    pub fn gen_pattern(snap: Snap) {
         match snap {
             Snap::S4th => {
-                gen_stream!(48);
+                gen_pattern!(Pattern::Stream, 48);
             }
             Snap::S8th => {
-                gen_stream!(24, 24);
+                gen_pattern!(Pattern::Stream, 24, 24);
             }
             Snap::S12th => {
-                gen_stream!(16, 16, 16);
+                gen_pattern!(Pattern::Stream, 16, 16, 16);
             }
             Snap::S16th => {
-                gen_stream!(12, 12, 12, 12);
+                gen_pattern!(Pattern::Stream, 12, 12, 12, 12);
             }
             Snap::S20th => {
-                gen_stream!(10, 9, 10, 9, 10);
+                gen_pattern!(Pattern::Stream, 10, 9, 10, 9, 10);
             }
             Snap::S22nd => {
-                gen_stream!(9, 9, 9, 8, 9, 9, 9, 8, 9, 9, 8);
+                gen_pattern!(Pattern::Stream, 9, 9, 9, 8, 9, 9, 9, 8, 9, 9, 8);
             }
             Snap::S26th => {
-                gen_stream!(7, 7, 8, 7, 8, 7, 7, 8, 7, 8, 7, 7, 8);
+                gen_pattern!(Pattern::Stream, 7, 7, 8, 7, 8, 7, 7, 8, 7, 8, 7, 7, 8);
             }
             Snap::S28th => {
-                gen_stream!(7, 7, 7, 7, 7, 7, 6);
+                gen_pattern!(Pattern::Stream, 7, 7, 7, 7, 7, 7, 6);
             }
             Snap::S32nd => {
-                gen_stream!(6, 6, 6, 6, 6, 6, 6, 6);
+                gen_pattern!(Pattern::Stream, 6, 6, 6, 6, 6, 6, 6, 6);
             }
             Snap::S36th => {
-                gen_stream!(5, 5, 6, 5, 5, 6, 5, 5, 6);
+                gen_pattern!(Pattern::Stream, 5, 5, 6, 5, 5, 6, 5, 5, 6);
             }
             Snap::S40th => {
-                gen_stream!(5, 5, 5, 5, 4, 5, 5, 5, 5, 4);
+                gen_pattern!(Pattern::Stream, 5, 5, 5, 5, 4, 5, 5, 5, 5, 4);
             }
             Snap::S44th => {
-                gen_stream!(4, 4, 5, 4, 4, 4, 5, 4, 4, 4, 5);
+                gen_pattern!(Pattern::Stream, 4, 4, 5, 4, 4, 4, 5, 4, 4, 4, 5);
             }
             Snap::S48th => {
-                gen_stream!(4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4);
+                gen_pattern!(Pattern::Stream, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4);
             }
             Snap::S70th => {
-                gen_stream!(
-                    3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3,
-                    3, 2, 3, 3, 3, 2, 3, 3, 2
+                gen_pattern!(
+                    Pattern::Stream, //this formatting...
+                    3,
+                    3,
+                    3,
+                    2,
+                    3,
+                    3,
+                    3,
+                    2,
+                    3,
+                    3,
+                    3,
+                    2,
+                    3,
+                    3,
+                    3,
+                    2,
+                    3,
+                    3,
+                    3,
+                    2,
+                    3,
+                    3,
+                    3,
+                    2,
+                    3,
+                    3,
+                    3,
+                    2,
+                    3,
+                    3,
+                    3,
+                    2,
+                    3,
+                    3,
+                    2
                 );
             }
             Snap::S80th => {
-                gen_stream!(2, 3, 2, 3, 2, 2, 3, 2, 3, 2, 2, 3, 2, 3, 2, 2, 3, 2, 3, 2);
+                gen_pattern!(
+                    Pattern::Stream,
+                    2,
+                    3,
+                    2,
+                    3,
+                    2,
+                    2,
+                    3,
+                    2,
+                    3,
+                    2,
+                    2,
+                    3,
+                    2,
+                    3,
+                    2,
+                    2,
+                    3,
+                    2,
+                    3,
+                    2
+                );
             }
             _ => println!("Unrecognized snap!"),
         }
@@ -69,6 +125,13 @@ enum Note {
     LNEnd,
     Mine,
     Fake,
+}
+
+enum ChordType {
+    Single,
+    Jump,
+    Hand,
+    Quad,
 }
 
 #[derive(Debug)]
@@ -107,6 +170,14 @@ pub enum Snap {
 #[derive(Debug)]
 pub enum SnapParseError {
     UnrecognizedSnap,
+}
+
+#[derive(Debug)]
+pub enum Pattern {
+    Stream,
+    Jumpstream,
+    Handstream,
+    Chordjacks,
 }
 
 impl FromStr for Snap {
@@ -206,6 +277,33 @@ impl Measure {
     }
 }
 
+impl ChordType {
+    fn gen(&self) -> NoteLine {
+        match self {
+            Self::Single => NoteLine::gen_single(),
+            Self::Jump => NoteLine::gen_jump(),
+            Self::Hand => NoteLine::gen_hand(),
+            Self::Quad => NoteLine::gen_quad(),
+        }
+    }
+}
+
+impl Pattern {
+    fn get_chordtypes(&self) -> Vec<ChordType> {
+        match self {
+            Self::Stream => vec![ChordType::Single],
+            Self::Jumpstream => vec![ChordType::Jump, ChordType::Single],
+            Self::Handstream => vec![
+                ChordType::Hand,
+                ChordType::Single,
+                ChordType::Jump,
+                ChordType::Single,
+            ],
+            Self::Chordjacks => vec![ChordType::Single],
+        }
+    }
+}
+
 impl NoteLine {
     const LENGTH: usize = 4;
     fn gen_quad() -> Self {
@@ -300,16 +398,17 @@ impl fmt::Display for NoteLine {
 }
 
 #[macro_export]
-macro_rules! gen_stream {
-    ($ ($spacing:expr),*) => {
+macro_rules! gen_pattern {
+    ($pattern_type:expr, $ ($spacing:expr),*) => {
         let mut total: usize = 0;
         let mut spacings: Vec<usize> = Vec::new();
+        let note_types = $pattern_type.get_chordtypes();
         $(spacings.push($spacing);)*
         for num in &spacings{
             total += num;
         }
         println!("tot: {}", total);
-        let mut last = NoteLine::gen_single();
+        let mut last = note_types[0].gen();
 
         let mut notes: Vec<Measure> = Vec::new();
         notes.push(Measure::new());
@@ -317,6 +416,7 @@ macro_rules! gen_stream {
 
         let mut space_count = 0;
         let mut spacing_num = 0;
+        let mut note_num = 1;//start with 1 since we did note 0 a few lines above
         let mut meas_num = 0;
         let num_runs = 192 / total;
         println!("num runs: {}", num_runs);
@@ -327,12 +427,13 @@ macro_rules! gen_stream {
                     notes.push(Measure::new());
                 }
                 if space_count == spacings[spacing_num] - 1{//if this line is where a note gets placed
-                    let mut current = NoteLine::gen_single();
-                    while let Ok(true) = NoteLine::is_minijack(&last, &current){
-                        current = NoteLine::gen_single();
+                    let mut current = note_types[note_num % note_types.len()].gen();
+                    while let Ok(true) = NoteLine::is_minijack(&last, &current){//this will need to be changed in someway for chordjacks
+                        current = note_types[note_num % note_types.len()].gen();
                     }
                     last = current.clone();
                     notes[meas_num].push(current);
+                    note_num += 1;
                     space_count = 0;
                     if spacing_num + 1 == spacings.len(){//if we run out of spacings, repeat
                         spacing_num = 0;
@@ -352,4 +453,19 @@ macro_rules! gen_stream {
             print!("{}", notes[i]);
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{gen_pattern, Measure, NoteLine, Pattern};
+    #[test]
+    fn js_gen() {
+        //cargo test -- --nocapture
+        gen_pattern!(Pattern::Jumpstream, 12, 12, 12, 12);
+    }
+    #[test]
+    fn hs_gen() {
+        //cargo test -- --nocapture
+        gen_pattern!(Pattern::Handstream, 12, 12, 12, 12);
+    }
 }

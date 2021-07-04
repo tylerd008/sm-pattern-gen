@@ -13,5 +13,5 @@ struct Opt {
 fn main() {
     //trace_macros!(true);
     let opt = Opt::from_args();
-    gen::gen_stream(opt.snap);
+    gen::gen_pattern(opt.snap);
 }
