@@ -1,4 +1,4 @@
-use pattern_gen::{gen, Pattern, Snap};
+use sm_pattern_gen::{gen, Pattern, Snap};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]

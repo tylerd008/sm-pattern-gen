@@ -89,14 +89,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "789da6d93f1b866ffe175afc5322a4d76c038605a1c3319bb57b06967ca98a36"
 
 [[package]]
-name = "pattern_gen"
-version = "0.1.0"
-dependencies = [
- "rand",
- "structopt",
-]
-
-[[package]]
 name = "ppv-lite86"
 version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -182,6 +174,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3190ef7066a446f2e7f42e239d161e905420ccab01eb967c9eb27d21b2322a73"
 dependencies = [
  "rand_core",
+]
+
+[[package]]
+name = "sm_pattern_gen"
+version = "0.1.0"
+dependencies = [
+ "rand",
+ "structopt",
 ]
 
 [[package]]

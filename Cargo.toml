@@ -1,5 +1,5 @@
 [package]
-name = "pattern_gen"
+name = "sm_pattern_gen"
 version = "0.1.0"
 authors = ["Flossy271 <77032854+Flossy271@users.noreply.github.com>"]
 edition = "2018"
