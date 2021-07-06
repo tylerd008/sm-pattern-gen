@@ -126,6 +126,7 @@ pub enum PatternParseError {
 pub enum Pattern {
     Stream,
     Jumpstream,
+    LightJumpstream,
     Handstream,
     Chordjacks,
 }
@@ -204,6 +205,7 @@ impl FromStr for Pattern {
             "jumpstream" | "js" => Pattern::Jumpstream,
             "handstream" | "hs" => Pattern::Handstream,
             "chordjacks" | "chordjack" | "cjs" | "cj" => Pattern::Chordjacks,
+            "light jumpstream" | "light js" | "ljs" => Pattern::LightJumpstream,
             _ => {
                 return Err(PatternParseError::UnrecognizedPattern);
             }
@@ -248,6 +250,7 @@ impl fmt::Display for Pattern {
         let result = match self {
             Self::Stream => "Stream",
             Self::Jumpstream => "Jumpstream",
+            Self::LightJumpstream => "Light Jumpstream",
             Self::Handstream => "Handstream",
             Self::Chordjacks => "Chordjacks",
         };
@@ -347,6 +350,12 @@ impl Pattern {
         match self {
             Self::Stream => vec![ChordType::Single],
             Self::Jumpstream => vec![ChordType::Jump, ChordType::Single],
+            Self::LightJumpstream => vec![
+                ChordType::Jump,
+                ChordType::Single,
+                ChordType::Single,
+                ChordType::Single,
+            ],
             Self::Handstream => vec![
                 ChordType::Hand,
                 ChordType::Single,
