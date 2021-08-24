@@ -15,11 +15,11 @@ pub mod gen {
 
         let mut notes: Vec<Measure> = Vec::new();
         notes.push(Measure::new());
-        notes[0].push(last.clone());
+        notes[0].push(last.clone()); //note 0
 
         let mut space_count = 0;
         let mut spacing_num = 0;
-        let mut note_num = 1; //start with 1 since we did note 0 a few lines above
+        let mut note_num = 1; //start with 1 since we did note 0 four lines above
         let mut meas_num = 0;
         let num_runs = 192 / total;
         for i in 0..num_runs {
@@ -91,7 +91,7 @@ struct NoteLine {
 
 #[derive(Debug)]
 pub enum Snap {
-    //cant start enum name with number zzzzz
+    //S at the beginning of each as enum name can't start with number
     S4th,
     S8th,
     S12th,
@@ -332,6 +332,24 @@ impl Measure {
     fn push(&mut self, notes: NoteLine) {
         self.notes.push(notes);
     }
+
+    fn is_anchor(&self, notes: NoteLine, anchor_length: usize) -> bool {
+        if anchor_length > (self.notes.len() * 2) {
+            return false;
+        }
+
+        let thing = (self.notes.len() - (anchor_length * 2)..self.notes.len() - 1).rev();
+
+        let mut anchor_count = 0;
+
+        for i in thing {
+            if let Ok(true) = NoteLine::is_minijack(&notes, &self.notes[i]) {
+                anchor_count += 1;
+            }
+        }
+
+        return anchor_count == anchor_length;
+    }
 }
 
 impl ChordType {
@@ -464,6 +482,7 @@ mod tests {
     #[test]
     fn js_gen() {
         //cargo test -- --nocapture
+        //^^^ for printing output of tests
         gen_pattern(Pattern::Jumpstream, Snap::S16th);
     }
     #[test]
