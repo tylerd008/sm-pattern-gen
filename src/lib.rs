@@ -3,7 +3,7 @@ use std::fmt;
 use std::str::FromStr;
 
 pub mod gen {
-    use crate::{Measure, NoteLine, Pattern, Snap};
+    use crate::{File, NoteLine, Pattern, Snap};
     pub fn gen_pattern(pattern: Pattern, snap: Snap) {
         let mut total: usize = 0;
         let spacings: Vec<usize> = snap.get_192nds();
@@ -13,22 +13,15 @@ pub mod gen {
         }
         let mut last = note_types[0].gen();
 
-        let mut notes: Vec<Measure> = Vec::new();
-        notes.push(Measure::new());
-        notes[0].push(last.clone()); //note 0
+        let mut notes = File::new(snap);
+        notes.push_noteline(last.clone()); //note 0
 
         let mut space_count = 0;
         let mut spacing_num = 0;
         let mut note_num = 1; //start with 1 since we did note 0 four lines above
-        let mut meas_num = 0;
         let num_runs = 192 / total;
-        for i in 0..num_runs {
-            for j in 0..total {
-                if i * j == (num_runs - 1) * (total - 1) {
-                    //the last note is the first note of the next measure, so make sure to indicate its a new measure before placing it
-                    meas_num += 1;
-                    notes.push(Measure::new());
-                }
+        for _ in 0..num_runs {
+            for _ in 0..total {
                 if space_count == spacings[spacing_num] - 1 {
                     //if this line is where a note gets placed
                     let mut current = note_types[note_num % note_types.len()].gen();
@@ -37,7 +30,7 @@ pub mod gen {
                         current = note_types[note_num % note_types.len()].gen();
                     }
                     last = current.clone();
-                    notes[meas_num].push(current);
+                    notes.push_noteline(current);
                     note_num += 1;
                     space_count = 0;
                     if spacing_num + 1 == spacings.len() {
@@ -47,17 +40,15 @@ pub mod gen {
                         spacing_num += 1;
                     }
                 } else {
-                    notes[meas_num].push(NoteLine::gen_empty());
+                    notes.push_noteline(NoteLine::gen_empty());
                     space_count += 1;
                 }
             }
         }
         for _ in 0..3 {
-            notes[meas_num].push(NoteLine::gen_empty());
+            notes.push_noteline(NoteLine::gen_empty());
         }
-        for i in 0..notes.len() {
-            print!("{}", notes[i]);
-        }
+        print!("{}", notes);
     }
 }
 
@@ -77,6 +68,12 @@ enum ChordType {
     Jump,
     Hand,
     Quad,
+}
+
+#[derive(Debug)]
+struct File {
+    notes: Vec<Measure>,
+    snap: Snap,
 }
 
 #[derive(Debug)]
@@ -324,6 +321,54 @@ impl fmt::Display for SnapParseError {
     }
 }
 
+impl File {
+    fn new(snap: Snap) -> Self {
+        let mut notes = Vec::new();
+        notes.push(Measure::new());
+        Self { notes, snap }
+    }
+
+    fn get_noteline(&self, noteline_num: usize) -> NoteLine {
+        let meas_num = noteline_num / 192;
+        let nl_num = noteline_num % 192;
+        self.notes[meas_num].notes[nl_num].clone()
+    }
+
+    fn total_notelines(&self) -> usize {
+        let num_meas = self.notes.len();
+        let last_meas_len = self.notes[num_meas - 1].notes.len();
+        (192 * num_meas) + last_meas_len
+    }
+
+    fn push_noteline(&mut self, noteline: NoteLine) {
+        let current_meas_num = self.notes.len();
+        if self.notes[current_meas_num - 1].notes.len() == 192 {
+            //if current measure is full, add new measure
+            self.notes.push(Measure::new());
+            self.notes[current_meas_num].push(noteline);
+        } else {
+            self.notes[current_meas_num - 1].push(noteline);
+        }
+    }
+
+    fn current_anchor_length(&self, noteline: NoteLine) -> usize {
+        let v192nds = self.snap.get_192nds();
+        let mut cur_note_num = self.total_notelines();
+        let mut cur_note_space = cur_note_num % v192nds.len();
+
+        cur_note_num -= cur_note_space;
+
+        let mut a_len: usize = 0;
+        while NoteLine::is_minijack(&noteline, &self.get_noteline(cur_note_num)).unwrap() {
+            cur_note_space = cur_note_num % v192nds.len();
+            cur_note_num -= cur_note_space;
+            a_len += 1;
+        }
+
+        a_len
+    }
+}
+
 impl Measure {
     fn new() -> Self {
         Self { notes: Vec::new() }
@@ -331,24 +376,6 @@ impl Measure {
 
     fn push(&mut self, notes: NoteLine) {
         self.notes.push(notes);
-    }
-
-    fn is_anchor(&self, notes: NoteLine, anchor_length: usize) -> bool {
-        if anchor_length > (self.notes.len() * 2) {
-            return false;
-        }
-
-        let thing = (self.notes.len() - (anchor_length * 2)..self.notes.len() - 1).rev();
-
-        let mut anchor_count = 0;
-
-        for i in thing {
-            if let Ok(true) = NoteLine::is_minijack(&notes, &self.notes[i]) {
-                anchor_count += 1;
-            }
-        }
-
-        return anchor_count == anchor_length;
     }
 }
 
@@ -453,6 +480,16 @@ impl NoteLine {
     }
 }
 
+impl fmt::Display for File {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut result = String::from("");
+        for meas in &self.notes {
+            result.push_str(&format!("{}", meas));
+        }
+        write!(f, "{}", result)
+    }
+}
+
 impl fmt::Display for Measure {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = String::from("");
@@ -478,7 +515,7 @@ impl fmt::Display for NoteLine {
 
 #[cfg(test)]
 mod tests {
-    use crate::{gen::gen_pattern, Measure, NoteLine, Pattern, Snap};
+    use crate::{gen::gen_pattern, Pattern, Snap};
     #[test]
     fn js_gen() {
         //cargo test -- --nocapture
