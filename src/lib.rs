@@ -25,7 +25,9 @@ pub mod gen {
                 if space_count == spacings[spacing_num] - 1 {
                     //if this line is where a note gets placed
                     let mut current = note_types[note_num % note_types.len()].gen();
-                    while let Ok(true) = NoteLine::is_minijack(&last, &current) {
+                    while NoteLine::is_minijack(&last, &current).unwrap()
+                        || notes.current_anchor_length(&current) >= 3
+                    {
                         //this will need to be changed in someway for chordjacks
                         current = note_types[note_num % note_types.len()].gen();
                     }
@@ -86,7 +88,37 @@ struct NoteLine {
     notes: Vec<Note>,
 }
 
-#[derive(Debug)]
+struct NotePointer {
+    pub pos: usize,
+    pub spacings: Vec<usize>,
+}
+
+impl NotePointer {
+    pub fn new(init_pos: usize, snap: Snap) -> Self {
+        Self {
+            pos: init_pos,
+            spacings: snap.get_192nds(),
+        }
+    }
+
+    pub fn move_pointer(&mut self, num_pos_to_move: usize) {
+        let mut cur_space: usize;
+        for _ in 0..num_pos_to_move {
+            cur_space = self.pos % self.spacings.len();
+
+            self.pos = if self.spacings[cur_space] < self.pos {
+                self.pos - self.spacings[cur_space]
+            } else {
+                0
+            };
+            if self.pos == 0 {
+                break;
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
 pub enum Snap {
     //S at the beginning of each as enum name can't start with number
     S4th,
@@ -335,9 +367,9 @@ impl File {
     }
 
     fn total_notelines(&self) -> usize {
-        let num_meas = self.notes.len();
-        let last_meas_len = self.notes[num_meas - 1].notes.len();
-        (192 * num_meas) + last_meas_len
+        let num_full_meas = self.notes.len();
+        let last_meas_len = self.notes[num_full_meas - 1].notes.len();
+        (192 * (num_full_meas - 1)) + last_meas_len
     }
 
     fn push_noteline(&mut self, noteline: NoteLine) {
@@ -351,18 +383,17 @@ impl File {
         }
     }
 
-    fn current_anchor_length(&self, noteline: NoteLine) -> usize {
-        let v192nds = self.snap.get_192nds();
-        let mut cur_note_num = self.total_notelines();
-        let mut cur_note_space = cur_note_num % v192nds.len();
+    fn current_anchor_length(&self, noteline: &NoteLine) -> usize {
+        let mut np = NotePointer::new(self.total_notelines(), self.snap);
 
-        cur_note_num -= cur_note_space;
-
-        let mut a_len: usize = 0;
-        while NoteLine::is_minijack(&noteline, &self.get_noteline(cur_note_num)).unwrap() {
-            cur_note_space = cur_note_num % v192nds.len();
-            cur_note_num -= cur_note_space;
+        let mut a_len: usize = 1;
+        np.move_pointer(2);
+        while NoteLine::is_minijack(&noteline, &self.get_noteline(np.pos)).unwrap() {
+            np.move_pointer(2);
             a_len += 1;
+            if np.pos == 0 {
+                break;
+            }
         }
 
         a_len
@@ -515,7 +546,7 @@ impl fmt::Display for NoteLine {
 
 #[cfg(test)]
 mod tests {
-    use crate::{gen::gen_pattern, Pattern, Snap};
+    use crate::{gen::gen_pattern, File, Note, NoteLine, NotePointer, Pattern, Snap};
     #[test]
     fn js_gen() {
         //cargo test -- --nocapture
@@ -526,5 +557,38 @@ mod tests {
     fn hs_gen() {
         //cargo test -- --nocapture
         //gen_pattern!(Pattern::Handstream, 12, 12, 12, 12);
+    }
+    #[test]
+    fn note_pointer_test_16ths() {
+        let mut np = NotePointer::new(192, Snap::S16th);
+        np.move_pointer(2);
+        assert_eq!(np.pos, 168);
+    }
+    #[test]
+    fn note_pointer_test_40ths() {
+        let mut np = NotePointer::new(192, Snap::S40th);
+        np.move_pointer(3);
+        assert_eq!(np.pos, 177);
+    }
+    #[test]
+    fn anchor_count_test() {
+        let mut notes = File::new(Snap::S16th);
+        let tap1 = NoteLine {
+            notes: vec![Note::Tap, Note::None, Note::None, Note::None],
+        };
+        let tap2 = NoteLine {
+            notes: vec![Note::None, Note::Tap, Note::None, Note::None],
+        };
+        for i in 0..192 {
+            if i % 24 == 0 {
+                notes.push_noteline(tap1.clone());
+            } else if i % 12 == 0 {
+                notes.push_noteline(tap2.clone());
+            } else {
+                notes.push_noteline(NoteLine::gen_empty());
+            }
+        }
+        let a_len = notes.current_anchor_length(&tap1);
+        assert_eq!(a_len, 8);
     }
 }
