@@ -15,8 +15,36 @@ struct Opt {
         help = "Specifies the pattern. Acceptable patterns are: stream, light jumpstream, jumpstream, handstream, and chordjacks."
     )]
     pattern: Pattern,
+    #[structopt(help = "Specify the number of measures of notes to generate.")]
+    num_measures: usize,
+    #[structopt(
+        help = "Specify the maximum length for anchors in the generated pattern. If specified, value must be at least 1 in general, 2 for jumpstream, and 3 for handstream."
+    )]
+    anchor_length: Option<usize>,
 }
 fn main() {
     let opt = Opt::from_args();
-    gen::gen_pattern(opt.pattern, opt.snap);
+    if let Some(a_len) = opt.anchor_length {
+        match opt.pattern {
+            Pattern::Stream => assert!(a_len >= 1, "Anchor length must be at least 1 for streams."),
+            Pattern::Jumpstream => assert!(
+                a_len >= 2,
+                "Anchor length must be at least 2 for jumpstream."
+            ),
+            Pattern::LightJumpstream => {
+                assert!(
+                    a_len >= 1,
+                    "Anchor length must be at least 1 for light jumpstream."
+                )
+            }
+            Pattern::Handstream => {
+                assert!(
+                    a_len >= 3,
+                    "Anchor length must be at least 3 for handstream."
+                )
+            }
+            Pattern::Chordjacks => unreachable!(),
+        }
+    }
+    gen::gen_pattern(opt.pattern, opt.snap, opt.anchor_length);
 }

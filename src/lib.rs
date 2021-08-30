@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 pub mod gen {
     use crate::{File, NoteLine, Pattern, Snap};
-    pub fn gen_pattern(pattern: Pattern, snap: Snap) {
+    pub fn gen_pattern(pattern: Pattern, snap: Snap, anchor_len: Option<usize>) {
         let mut total: usize = 0;
         let spacings: Vec<usize> = snap.get_192nds();
         let note_types = pattern.get_chordtypes();
@@ -20,13 +20,17 @@ pub mod gen {
         let mut spacing_num = 0;
         let mut note_num = 1; //start with 1 since we did note 0 four lines above
         let num_runs = 192 / total;
+        let a_len = match anchor_len {
+            Some(val) => val,
+            None => usize::MAX,
+        };
         for _ in 0..num_runs {
             for _ in 0..total {
                 if space_count == spacings[spacing_num] - 1 {
                     //if this line is where a note gets placed
                     let mut current = note_types[note_num % note_types.len()].gen();
                     while NoteLine::is_minijack(&last, &current).unwrap()
-                        || notes.current_anchor_length(&current) >= 3
+                        || notes.current_anchor_length(&current) >= a_len
                     {
                         //this will need to be changed in someway for chordjacks
                         current = note_types[note_num % note_types.len()].gen();
@@ -551,7 +555,7 @@ mod tests {
     fn js_gen() {
         //cargo test -- --nocapture
         //^^^ for printing output of tests
-        gen_pattern(Pattern::Jumpstream, Snap::S16th);
+        gen_pattern(Pattern::Jumpstream, Snap::S16th, None);
     }
     #[test]
     fn hs_gen() {
