@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 pub mod gen {
     use crate::{File, NoteLine, Pattern, Snap};
-    pub fn gen_pattern(pattern: Pattern, snap: Snap, anchor_len: Option<usize>) {
+    pub fn gen_pattern(pattern: Pattern, snap: Snap, num_meas: usize, anchor_len: Option<usize>) {
         let mut total: usize = 0;
         let spacings: Vec<usize> = snap.get_192nds();
         let note_types = pattern.get_chordtypes();
@@ -20,6 +20,7 @@ pub mod gen {
         let mut spacing_num = 0;
         let mut note_num = 1; //start with 1 since we did note 0 four lines above
         let num_runs = 192 / total;
+        let num_runs = num_runs * num_meas;
         let a_len = match anchor_len {
             Some(val) => val,
             None => usize::MAX,
@@ -555,7 +556,7 @@ mod tests {
     fn js_gen() {
         //cargo test -- --nocapture
         //^^^ for printing output of tests
-        gen_pattern(Pattern::Jumpstream, Snap::S16th, None);
+        gen_pattern(Pattern::Jumpstream, Snap::S16th, 1, None);
     }
     #[test]
     fn hs_gen() {
