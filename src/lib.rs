@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 pub mod gen {
     use crate::{File, NoteLine, Pattern, Snap};
+    use clipboard::{ClipboardContext, ClipboardProvider};
     pub fn gen_pattern(pattern: Pattern, snap: Snap, num_meas: usize, anchor_len: Option<usize>) {
         let mut total: usize = 0;
         let spacings: Vec<usize> = snap.get_192nds();
@@ -55,7 +56,24 @@ pub mod gen {
         for _ in 0..3 {
             notes.push_noteline(NoteLine::gen_empty());
         }
-        print!("{}", notes);
+        let mut ctx: ClipboardContext = match ClipboardProvider::new() {
+            Ok(c) => c,
+            Err(e) => {
+                println!("Error `{:?}` when getting clipboard access", e);
+                return;
+            }
+        };
+        match ctx.set_contents(format!("{}", notes)) {
+            Ok(_) => {
+                println!("Notedata copied to clipboard.");
+            }
+            Err(e) => {
+                println!(
+                    "Error `{:?}` when attempting to copy notedata to clipboard.",
+                    e
+                );
+            }
+        };
     }
 }
 
