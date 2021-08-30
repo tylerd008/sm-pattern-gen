@@ -31,7 +31,7 @@ pub mod gen {
                 if space_count == spacings[spacing_num] - 1 {
                     //if this line is where a note gets placed
                     let mut current = note_types[note_num % note_types.len()].gen();
-                    while NoteLine::is_minijack(&last, &current).unwrap()
+                    while NoteLine::is_minijack(&last, &current)
                         || notes.current_anchor_length(&current) >= a_len
                     {
                         //this will need to be changed in someway for chordjacks
@@ -81,11 +81,13 @@ pub mod gen {
 enum Note {
     None,
     Tap,
+    /*
+    Commenting these out for now. I kinda want them here for completeness' sake, but I'm not really sure how I'd use them
     HoldStart,
     RollStart,
     LNEnd,
     Mine,
-    Fake,
+    Fake, */
 }
 
 enum ChordType {
@@ -336,22 +338,17 @@ impl fmt::Display for Snap {
     }
 }
 
-#[derive(Debug)]
-enum NoteGenErr {
-    DiffLengths, //maybe this is unnecessary given the keycount will probably always be hardcoded to 4 but nothing wrong with keeping the door open for expansion later i guess
-}
-
 impl fmt::Display for Note {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let result: &str;
         result = match self {
             Note::None => "0",
             Note::Tap => "1",
-            Note::HoldStart => "2",
+            /*  Note::HoldStart => "2",
             Note::RollStart => "4",
             Note::LNEnd => "3",
             Note::Mine => "M",
-            Note::Fake => "F",
+            Note::Fake => "F", */
         };
         write!(f, "{}", result)
     }
@@ -411,7 +408,7 @@ impl File {
 
         let mut a_len: usize = 1;
         np.move_pointer(2);
-        while NoteLine::is_minijack(&noteline, &self.get_noteline(np.pos)).unwrap() {
+        while NoteLine::is_minijack(&noteline, &self.get_noteline(np.pos)) {
             np.move_pointer(2);
             a_len += 1;
             if np.pos == 0 {
@@ -521,16 +518,13 @@ impl NoteLine {
             notes: vec![Note::None, Note::None, Note::None, Note::None],
         }
     }
-    fn is_minijack(line1: &NoteLine, line2: &NoteLine) -> Result<bool, NoteGenErr> {
-        if line1.notes.len() != line2.notes.len() {
-            return Err(NoteGenErr::DiffLengths);
-        }
+    fn is_minijack(line1: &NoteLine, line2: &NoteLine) -> bool {
         for i in 0..line1.notes.len() {
             if line1.notes[i] == Note::Tap && line2.notes[i] == Note::Tap {
-                return Ok(true);
+                return true;
             }
         }
-        return Ok(false);
+        false
     }
 }
 
