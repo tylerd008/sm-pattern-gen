@@ -47,7 +47,7 @@ fn main() {
                     "Anchor length must be at least 3 for handstream."
                 )
             }
-            Pattern::Chordjacks => unreachable!(),
+            Pattern::Chordjacks => {}
         }
     }
     gen::gen_pattern(opt.pattern, opt.snap, opt.num_measures, opt.anchor_length);

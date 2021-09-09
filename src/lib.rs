@@ -31,8 +31,9 @@ pub mod gen {
                 if space_count == spacings[spacing_num] - 1 {
                     //if this line is where a note gets placed
                     let mut current = note_types[note_num % note_types.len()].gen();
-                    while NoteLine::is_minijack(&last, &current)
-                        || notes.current_anchor_length(&current) >= a_len
+                    while (pattern != Pattern::Chordjacks)//not sure if this is really the best way to do this, as this prevents anchor limits, although enforcing those with chordjacks would be somewhat problematic as low anchor lengths would be very limiting
+                        && (NoteLine::is_minijack(&last, &current)
+                        || notes.current_anchor_length(&current) >= a_len)
                     {
                         //this will need to be changed in someway for chordjacks
                         current = note_types[note_num % note_types.len()].gen();
@@ -176,7 +177,7 @@ pub enum PatternParseError {
     UnrecognizedPattern,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Pattern {
     Stream,
     Jumpstream,
@@ -458,7 +459,12 @@ impl Pattern {
                 ChordType::Jump,
                 ChordType::Single,
             ],
-            Self::Chordjacks => vec![ChordType::Single],
+            Self::Chordjacks => vec![
+                ChordType::Hand,
+                ChordType::Jump,
+                ChordType::Jump,
+                ChordType::Jump,
+            ], //might change this later, 'chordjacks' is really broad and im not really sure what i should put. maybe add more flavors of cj?
         }
     }
 }
