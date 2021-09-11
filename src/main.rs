@@ -22,7 +22,7 @@ struct Opt {
     num_measures: usize,
     #[structopt(
         short,
-        help = "Specify the maximum length for anchors in the generated pattern. If specified, value must be at least 1 in general, 2 for jumpstream, and 3 for handstream. Does not affect chordjack output"
+        help = "Specify the maximum length for anchors in the generated pattern. If specified, value must be at least 1 in general, 2 for jumpstream, and 3 for handstream. Does not affect chordjack output. Do note that low anchor values can be very restricting for pattern generation, and the program may hang during generation as a result. "
     )]
     anchor_length: Option<usize>,
     #[structopt(
