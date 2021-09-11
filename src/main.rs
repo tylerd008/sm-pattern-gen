@@ -25,6 +25,11 @@ struct Opt {
         help = "Specify the maximum length for anchors in the generated pattern. If specified, value must be at least 1 in general, 2 for jumpstream, and 3 for handstream. Does not affect chordjack output"
     )]
     anchor_length: Option<usize>,
+    #[structopt(
+        short,
+        help = "Removes the minijack check for generation, resulting in patterns similar to super shuffle."
+    )]
+    super_shuffle: bool,
 }
 fn main() {
     let opt = Opt::from_args();
@@ -51,5 +56,11 @@ fn main() {
             Pattern::DenseChordjacks => {}
         }
     }
-    gen::gen_pattern(opt.pattern, opt.snap, opt.num_measures, opt.anchor_length);
+    gen::gen_pattern(
+        opt.pattern,
+        opt.snap,
+        opt.num_measures,
+        opt.anchor_length,
+        opt.super_shuffle,
+    );
 }

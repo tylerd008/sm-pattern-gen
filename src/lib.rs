@@ -5,7 +5,13 @@ use std::str::FromStr;
 pub mod gen {
     use crate::{File, NoteLine, Pattern, Snap};
     use clipboard::{ClipboardContext, ClipboardProvider};
-    pub fn gen_pattern(pattern: Pattern, snap: Snap, num_meas: usize, anchor_len: Option<usize>) {
+    pub fn gen_pattern(
+        pattern: Pattern,
+        snap: Snap,
+        num_meas: usize,
+        anchor_len: Option<usize>,
+        super_shuffle: bool,
+    ) {
         let mut total: usize = 0;
         let spacings: Vec<usize> = snap.get_192nds();
         let note_types = pattern.get_chordtypes();
@@ -33,7 +39,7 @@ pub mod gen {
                     let mut current = note_types[note_num % note_types.len()].gen();
                     let is_cj =
                         (pattern == Pattern::Chordjacks) || (pattern == Pattern::DenseChordjacks);
-                    while !is_cj//not sure if this is really the best way to do this, as this prevents anchor limits, although enforcing those with chordjacks would be somewhat problematic as low anchor lengths would be very limiting
+                    while !super_shuffle && !is_cj//not sure if this is really the best way to do this, as this prevents anchor limits, although enforcing those with chordjacks would be somewhat problematic as low anchor lengths would be very limiting
                         && (NoteLine::is_minijack(&last, &current)
                         || notes.current_anchor_length(&current) >= a_len)
                     {
@@ -585,7 +591,7 @@ mod tests {
     fn js_gen() {
         //cargo test -- --nocapture
         //^^^ for printing output of tests
-        gen_pattern(Pattern::Jumpstream, Snap::S16th, 1, None);
+        gen_pattern(Pattern::Jumpstream, Snap::S16th, 1, None, false);
     }
     #[test]
     fn hs_gen() {
