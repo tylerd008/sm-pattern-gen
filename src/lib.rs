@@ -31,7 +31,9 @@ pub mod gen {
                 if space_count == spacings[spacing_num] - 1 {
                     //if this line is where a note gets placed
                     let mut current = note_types[note_num % note_types.len()].gen();
-                    while (pattern != Pattern::Chordjacks)//not sure if this is really the best way to do this, as this prevents anchor limits, although enforcing those with chordjacks would be somewhat problematic as low anchor lengths would be very limiting
+                    let is_cj =
+                        (pattern == Pattern::Chordjacks) || (pattern == Pattern::DenseChordjacks);
+                    while !is_cj//not sure if this is really the best way to do this, as this prevents anchor limits, although enforcing those with chordjacks would be somewhat problematic as low anchor lengths would be very limiting
                         && (NoteLine::is_minijack(&last, &current)
                         || notes.current_anchor_length(&current) >= a_len)
                     {
@@ -184,6 +186,7 @@ pub enum Pattern {
     LightJumpstream,
     Handstream,
     Chordjacks,
+    DenseChordjacks,
 }
 
 impl Snap {
@@ -261,6 +264,7 @@ impl FromStr for Pattern {
             "handstream" | "hs" => Pattern::Handstream,
             "chordjacks" | "chordjack" | "cjs" | "cj" => Pattern::Chordjacks,
             "light jumpstream" | "light js" | "ljs" => Pattern::LightJumpstream,
+            "dense chordjacks" | "dense cjs" | "dcjs" | "dcj" => Pattern::DenseChordjacks,
             _ => {
                 return Err(PatternParseError::UnrecognizedPattern);
             }
@@ -308,6 +312,7 @@ impl fmt::Display for Pattern {
             Self::LightJumpstream => "Light Jumpstream",
             Self::Handstream => "Handstream",
             Self::Chordjacks => "Chordjacks",
+            Self::DenseChordjacks => "Dense Chordjacks",
         };
         write!(f, "{}", result)
     }
@@ -464,7 +469,13 @@ impl Pattern {
                 ChordType::Jump,
                 ChordType::Jump,
                 ChordType::Jump,
-            ], //might change this later, 'chordjacks' is really broad and im not really sure what i should put. maybe add more flavors of cj?
+            ],
+            Self::DenseChordjacks => vec![
+                ChordType::Quad,
+                ChordType::Hand,
+                ChordType::Jump,
+                ChordType::Hand,
+            ],
         }
     }
 }

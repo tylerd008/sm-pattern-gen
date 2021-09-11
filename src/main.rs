@@ -22,7 +22,7 @@ struct Opt {
     num_measures: usize,
     #[structopt(
         short,
-        help = "Specify the maximum length for anchors in the generated pattern. If specified, value must be at least 1 in general, 2 for jumpstream, and 3 for handstream."
+        help = "Specify the maximum length for anchors in the generated pattern. If specified, value must be at least 1 in general, 2 for jumpstream, and 3 for handstream. Does not affect chordjack output"
     )]
     anchor_length: Option<usize>,
 }
@@ -48,6 +48,7 @@ fn main() {
                 )
             }
             Pattern::Chordjacks => {}
+            Pattern::DenseChordjacks => {}
         }
     }
     gen::gen_pattern(opt.pattern, opt.snap, opt.num_measures, opt.anchor_length);
