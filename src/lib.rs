@@ -264,7 +264,7 @@ impl FromStr for Pattern {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let fmted_s = s.to_lowercase();
         let fmted_s = fmted_s.trim();
-        let pattern = match &fmted_s[..] {
+        let pattern = match fmted_s {
             "stream" => Pattern::Stream,
             "jumpstream" | "js" => Pattern::Jumpstream,
             "handstream" | "hs" => Pattern::Handstream,
@@ -352,8 +352,7 @@ impl fmt::Display for Snap {
 
 impl fmt::Display for Note {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let result: &str;
-        result = match self {
+        let result: &str = match self {
             Note::None => "0",
             Note::Tap => "1",
             /*  Note::HoldStart => "2",
@@ -387,8 +386,7 @@ impl fmt::Display for SnapParseError {
 
 impl File {
     fn new(snap: Snap) -> Self {
-        let mut notes = Vec::new();
-        notes.push(Measure::new());
+        let notes = vec![Measure::new()];
         Self { notes, snap }
     }
 
@@ -420,7 +418,7 @@ impl File {
 
         let mut a_len: usize = 1;
         np.move_pointer(2);
-        while NoteLine::is_minijack(&noteline, &self.get_noteline(np.pos)) {
+        while NoteLine::is_minijack(noteline, &self.get_noteline(np.pos)) {
             np.move_pointer(2);
             a_len += 1;
             if np.pos == 0 {
@@ -568,7 +566,7 @@ impl fmt::Display for Measure {
             result.push_str(&format!("{}\n", nl));
         }
 
-        write!(f, "{},\n", result)
+        writeln!(f, "{},", result)
     }
 }
 
