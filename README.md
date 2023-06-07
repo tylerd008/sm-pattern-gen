@@ -7,7 +7,7 @@ As an example: `sm_pattern_gen.exe 20th jumpstream` would generate a measure's w
 You'll have to copy+paste the output in the terminal into the .sm you want to add the notes to.
 
 ## Current objectives:
-[x] Turn into cli program that accepts cmd arguments.
+[x] Turn into cli program that accepts cmd arguments.  
 [] Make stream generation smarter.
 
 ## License
